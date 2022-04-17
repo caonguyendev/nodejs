@@ -13,7 +13,6 @@ let handleUserLogin = (email, password) => {
         });
         if (user) {
           let check = await bcrypt.compareSync(password, user.password);
-          console.log(password, user.password);
           if (check) {
             userData.errCode = 0;
             userData.errMessage = "Ok";
@@ -106,7 +105,7 @@ let createNewUser = (data) => {
         });
         resolve({
           errCode: 0,
-          errMessage: "OK",
+          message: "OK",
         });
       }
     } catch (error) {
@@ -118,7 +117,7 @@ let createNewUser = (data) => {
 let hashUserPassword = (password) => {
   return new Promise(async (resolve, reject) => {
     try {
-      var hashPassword = await bcrypt.hashSync("B4c0//", salt);
+      var hashPassword = await bcrypt.hashSync(password, salt);
       resolve(hashPassword);
     } catch (error) {
       reject(error);
