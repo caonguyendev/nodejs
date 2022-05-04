@@ -5,32 +5,34 @@ const salt = bcrypt.genSaltSync(10);
 let handleUserLogin = (email, password) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let userData = {};
+      let data = {};
       let isExist = await checkUserEmail(email);
       if (isExist) {
         let user = await db.User.findOne({
           where: { email: email },
+          raw: true,
         });
         if (user) {
           let check = await bcrypt.compareSync(password, user.password);
           if (check) {
-            userData.errCode = 0;
-            userData.errMessage = "Ok";
-            userData.user = user;
+            data.errCode = 0;
+            data.errMessage = "Ok";
+            delete user.password;
+            data.user = user;
           } else {
-            userData.errCode = 3;
-            userData.errMessage = "Wrong Password";
+            data.errCode = 3;
+            data.errMessage = "Wrong Password";
           }
         } else {
-          userData.errCode = 2;
-          userData.errMessage = `User's not found!`;
+          data.errCode = 2;
+          data.errMessage = `User's not found!`;
         }
       } else {
         // return error
-        userData.errCode = 1;
-        userData.errMessage = `Your's Email isn't in your system. Plz try other email!`;
+        data.errCode = 1;
+        data.errMessage = `Your's Email isn't in your system. Plz try other email!`;
       }
-      resolve(userData);
+      resolve(data);
     } catch (error) {
       reject(error);
     }
@@ -102,6 +104,8 @@ let createNewUser = (data) => {
           phonenumber: data.phonenumber,
           gender: data.gender,
           roleId: data.roleId,
+          positionId: data.positionId,
+          image: data.avatar,
         });
         resolve({
           errCode: 0,
@@ -153,7 +157,7 @@ let deleteUser = (userId) => {
 let updateUserData = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      if (!data.id) {
+      if (!data.id || !data.roleId || !data.gender || !data.positionId) {
         return resolve({
           errCode: 2,
           errMessage: "Missing required parameter!",
@@ -169,6 +173,14 @@ let updateUserData = (data) => {
         user.firstName = data.firstName;
         user.lastName = data.lastName;
         user.address = data.address;
+        user.phonenumber = data.phonenumber;
+        user.gender = data.gender;
+        user.roleId = data.roleId;
+        user.positionId = data.positionId;
+        if (data.avatar) {
+          user.image = data.avatar;
+        }
+
         await user.save();
         resolve({
           errCode: 0,
@@ -186,10 +198,34 @@ let updateUserData = (data) => {
   });
 };
 
+let getAllCodeService = (typeInput) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!typeInput) {
+        resolve({
+          errCode: 1,
+          errMessage: "Missing required parameter!",
+        });
+      } else {
+        let res = {};
+        let allcode = await db.Allcode.findAll({
+          where: { type: typeInput },
+        });
+        res.errCode = 0;
+        res.data = allcode; 
+        resolve(res);
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 module.exports = {
   handleUserLogin: handleUserLogin,
   getAllUsers: getAllUsers,
   createNewUser: createNewUser,
   updateUserData: updateUserData,
   deleteUser: deleteUser,
+  getAllCodeService: getAllCodeService,
 };
